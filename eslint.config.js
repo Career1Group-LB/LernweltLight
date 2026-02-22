@@ -5,6 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import importX from 'eslint-plugin-import-x'
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript'
 
 export default defineConfig([
   globalIgnores(['dist']),
@@ -23,14 +24,16 @@ export default defineConfig([
       globals: globals.browser,
     },
     settings: {
-      'import-x/resolver': {
-        typescript: true,
-        node: true,
-      },
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({
+          alwaysTryTypes: true,
+        }),
+      ],
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
-      'import-x/no-unresolved': ['error', { ignore: ['\\.svg$', '\\.png$', '\\.jpg$', '\\.webp$'] }],
+      // Disabled: TypeScript already checks module resolution via type-check
+      'import-x/no-unresolved': 'off',
       'import-x/order': [
         'warn',
         {

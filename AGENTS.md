@@ -242,7 +242,7 @@ export const useUIStore = create<UIState>((set) => ({
 | Currently selected filter | Zustand (or URL params) |
 | Form input values | `useState` |
 | Modal open/closed | `useState` |
-| Auth state (current user, token) | React Context |
+| Auth state (current user, token) | Zustand (`useAuth`) |
 | Theme / branding config | React Context |
 
 ## TypeScript
@@ -398,31 +398,58 @@ export const coursesApi = {
 
 ### Route Definitions
 
-Using React Router v6 with lazy-loaded routes:
+Using React Router v6 with lazy-loaded routes. `Suspense` is handled at the
+layout level – `AppLayout` wraps `<Outlet />` in `<Suspense>`, so all
+authenticated child routes are covered automatically. Public routes outside
+the layout (e.g. `/login`) get an inline `<Suspense>`:
 
 ```typescript
 // router/routes.tsx
-import { createBrowserRouter } from 'react-router-dom';
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 
-const CoursesPage = lazy(() => import('../features/courses/pages/CoursesPage'));
-const CourseDetailPage = lazy(() => import('../features/courses/pages/CourseDetailPage'));
+import { AppLayout } from '@/layouts/AppLayout';
+
+import { ProtectedRoute } from './ProtectedRoute';
+
+const LoginPage = lazy(() => import('@/features/auth/components/LoginPage'));
+const CoursesPage = lazy(() => import('@/features/courses/components/CoursesPage'));
 
 export const router = createBrowserRouter([
   {
+    path: '/login',
+    // Outside AppLayout → needs its own Suspense boundary
+    element: <Suspense fallback={<div>Laden...</div>}><LoginPage /></Suspense>,
+  },
+  {
     path: '/',
-    element: <RootLayout />,
+    element: <ProtectedRoute><AppLayout /></ProtectedRoute>,
     children: [
+      { index: true, element: <Navigate to="/courses" replace /> },
+      // No Suspense needed – AppLayout has Suspense around <Outlet />
       { path: 'courses', element: <CoursesPage /> },
-      { path: 'courses/:courseId', element: <CourseDetailPage /> },
-      { path: 'courses/:courseId/modules/:moduleId', element: <ModulePage /> },
-      { path: 'profile', element: <ProfilePage /> },
-      { path: 'certificates', element: <CertificatesPage /> },
     ],
   },
-  { path: '/login', element: <LoginPage /> },
-  { path: '/oauth/callback', element: <OAuthCallbackPage /> },
 ]);
+```
+
+```typescript
+// layouts/AppLayout.tsx – Suspense boundary for all authenticated routes
+<main>
+  <Suspense fallback={<div>Seite wird geladen...</div>}>
+    <Outlet />
+  </Suspense>
+</main>
+```
+
+**Provider nesting order** matters. `QueryProvider` must wrap `RouterProvider`
+because components inside routes use React Query hooks:
+
+```typescript
+// App.tsx – correct order
+<QueryProvider>
+  <RouterProvider router={router} />
+</QueryProvider>
 ```
 
 ### Route Guards
