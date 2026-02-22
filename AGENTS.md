@@ -457,7 +457,11 @@ No separate branding repository is needed.
 ## Feature Flags
 
 Feature flags are loaded from the backend config service and control feature
-visibility:
+visibility. The `FeatureFlag` type is defined in `@/shared/types/common`:
+
+```typescript
+import type { FeatureFlag } from '@/shared/types/common';
+```
 
 ```typescript
 // shared/hooks/useFeatureFlag.ts
@@ -483,6 +487,23 @@ Available flags: `liveStream`, `mediaLibrary`, `jobOffers`, `recruitment`,
 - Routes for disabled features must redirect or show a 404
 
 ## Error Handling
+
+### Shared Error Type
+
+The backend returns errors in a consistent shape. Use the `ApiError` type from
+`@/shared/types/common` – never define your own error interface:
+
+```typescript
+import type { ApiError } from '@/shared/types/common';
+```
+
+```typescript
+interface ApiError {
+  message: string;
+  statusCode: number;
+  details?: Record<string, unknown>;
+}
+```
 
 ### API Errors
 
