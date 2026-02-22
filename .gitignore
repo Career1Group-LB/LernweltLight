@@ -23,6 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # AI Development Workspaces [Luke]
 .ai-workspace/
 .claude/
