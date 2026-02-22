@@ -684,6 +684,27 @@ pnpm preview
 
 - Use path aliases (`@/features/...`, `@/shared/...`) instead of relative paths
 - Features export through `index.ts` barrel files
+- Import groups must follow this order (enforced by ESLint), with a blank line between each group:
+  1. `builtin` – Node.js built-ins (e.g. `path`, `fs`)
+  2. `external` – npm packages (e.g. `react`, `axios`)
+  3. `internal` – path alias imports (e.g. `@/shared/...`, `@/features/...`)
+  4. `parent` – relative imports from parent directories (e.g. `../`)
+  5. `sibling` – relative imports from the same directory (e.g. `./`)
+  6. `index` – index file imports (e.g. `./index`)
+
+```typescript
+// GOOD – correct import order
+import path from 'path';
+
+import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+
+import { apiClient } from '@/shared/api/client';
+
+import { CourseSchema } from '../schemas/course.schema';
+
+import { formatDate } from './utils';
+```
 
 ### Naming Conventions
 
