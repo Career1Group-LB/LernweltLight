@@ -1,22 +1,7 @@
-import { useNavigate } from 'react-router-dom';
+import { useLogin } from '../hooks/useLogin';
 
-import { useAuth } from '../hooks/useAuth';
-
-// "default export" weil React Router lazy() das so erwartet
 export default function LoginPage() {
-    // useAuth gibt uns die login-Funktion aus unserem Zustand-Store
-    const { login } = useAuth();
-
-    // useNavigate: Hook um programmtisch zu navigieren
-    // Flutter-Äquivalent: context.router.replace(CoursesRoute())
-    const navigate = useNavigate();
-
-    const handleLogin = () => {
-        // PLATZHALTER: Später kommt hier der echte OAuth-Flow
-        // (Redirect zum OAuth-Server, Callback, Token-Exchange, etc.)
-        login('demo-token-123');
-        navigate('/courses');
-    };
+    const { mutate: login, isPending, isError } = useLogin();
 
     return (
         <div
@@ -42,7 +27,10 @@ export default function LoginPage() {
                     Deine Lernplattform
                 </p>
                 <button
-                    onClick={handleLogin}
+                    onClick={() =>
+                        login({ email: 'demo@lernwelt.de', password: 'demo' })
+                    }
+                    disabled={isPending}
                     style={{
                         backgroundColor: '#063844',
                         color: '#fff',
@@ -50,11 +38,17 @@ export default function LoginPage() {
                         padding: '12px 32px',
                         borderRadius: '8px',
                         fontSize: '16px',
-                        cursor: 'pointer',
+                        cursor: isPending ? 'not-allowed' : 'pointer',
+                        opacity: isPending ? 0.7 : 1,
                     }}
                 >
-                    Demo-Login (Platzhalter)
+                    {isPending ? 'Anmelden...' : 'Demo-Login'}
                 </button>
+                {isError && (
+                    <p style={{ marginTop: '12px', fontSize: '14px', color: '#c0392b' }}>
+                        Login fehlgeschlagen. Bitte erneut versuchen.
+                    </p>
+                )}
                 <p style={{ marginTop: '16px', fontSize: '12px', color: '#999' }}>
                     Echter OAuth-Login folgt wenn Auth-Service steht
                 </p>
