@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+// i18n muss VOR App importiert werden
+import './i18n/index';
 import './index.css';
 import App from './App';
 

@@ -611,21 +611,103 @@ function CourseDetail({ courseId }: { courseId: string }) {
 
 ## Internationalization (i18n)
 
-- All user-facing strings **must** be localized (never hardcoded)
-- Use a library like `react-i18next` for translations
-- Translation files live in `src/i18n/`
+**Setup:** `react-i18next` with `i18next-browser-languagedetector` and
+`i18next-resources-to-backend`. Configuration lives in `src/i18n/index.ts`.
+
+### Rules
+
+- All user-facing strings **must** be localized – never hardcoded in JSX
 - Primary language: German (`de`)
+- Translation files live in **`public/locales/de/`** (not `src/`) – Vite serves them as static assets
+- One JSON file per **feature per language** (namespace-based architecture)
+
+### Namespace Structure
+
+Namespaces mirror the feature-based architecture:
+
+```
+public/locales/de/
+├── common.json       ← Cross-feature: buttons, nav labels, loading states
+├── auth.json         ← Login, logout
+├── courses.json      ← Course list, course detail
+├── errors.json       ← All API/network error messages shown to the user
+├── quiz.json
+├── profile.json
+└── ...               ← One file per feature
+```
+
+### Usage in Components
+
+```typescript
+import { useTranslation } from 'react-i18next';
+
+export function CoursesPage() {
+  // Loads public/locales/de/courses.json automatically
+  const { t } = useTranslation('courses');
+
+  return <h1>{t('title')}</h1>; // → "Meine Kurse"
+}
+```
+
+For the `common` namespace (default), no namespace argument is needed:
+
+```typescript
+const { t } = useTranslation(); // loads 'common'
+t('actions.save')               // → "Speichern"
+t('navigation.courses')         // → "Kurse"
+```
+
+For multiple namespaces in one component:
+
+```typescript
+const { t } = useTranslation(['courses', 'common']);
+t('title')                  // from 'courses'
+t('common:actions.save')    // from 'common' with prefix
+```
+
+### Interpolation and Pluralization
+
+```typescript
+// Interpolation: {{variable}} in JSON
+t('greeting', { name: user.name })       // "Hallo {{name}}!" → "Hallo Max!"
+
+// Pluralization: _other suffix for German plural
+// JSON: { "modules": "{{count}} Modul", "modules_other": "{{count}} Module" }
+t('card.modules', { count: 1 })          // → "1 Modul"
+t('card.modules', { count: 3 })          // → "3 Module"
+```
+
+### TypeScript Type Safety
+
+`src/i18n/i18next.d.ts` provides full autocomplete and compile-time key validation.
+Add new namespaces here when creating new translation files.
+
+```typescript
+t('titelX')   // ❌ TypeScript error: key does not exist
+t('title')    // ✅ TypeScript knows this key exists
+```
+
+### Suspense Requirement
+
+Translations are lazy-loaded per namespace. Components using `useTranslation` must
+be wrapped in `<Suspense>`. `AppLayout` already wraps `<Outlet />` in Suspense –
+all authenticated routes are covered. `App.tsx` wraps `RouterProvider` in Suspense
+for the top-level loading state.
 
 ❌ **Don't hardcode strings**:
 
 ```tsx
 <button>Kurs starten</button>
+<h1>Meine Kurse</h1>
 ```
 
 ✅ **Use translation keys**:
 
 ```tsx
-<button>{t('courses.startCourse')}</button>
+// In courses namespace:
+const { t } = useTranslation('courses');
+<button>{t('detail.start')}</button>
+<h1>{t('title')}</h1>
 ```
 
 ## Component Guidelines
