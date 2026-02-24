@@ -21,7 +21,7 @@ frontend is a **thin client** focused on data display and user interaction.
 | Routing | React Router v6 |
 | Server State | TanStack React Query (v5) |
 | Client State | Zustand |
-| Styling | (to be decided – CSS Modules / Tailwind) |
+| Styling | Tailwind CSS + CSS Custom Properties (Design Tokens) |
 | API Client | Axios |
 | Runtime Validation | Zod |
 | Testing | Vitest + React Testing Library |
@@ -465,18 +465,48 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 ```
 
+## Styling
+
+### Token System
+
+Styles are based on **Tailwind CSS** with **CSS Custom Properties** as design tokens.
+Tokens are defined in `src/styles/tokens.css` and connected to Tailwind via `@theme`
+in `src/index.css`. This enables automatic Dark Mode switching.
+
+**Never use hardcoded color values. Always use the token-based Tailwind classes.**
+
+| Token class | CSS variable | Use case |
+|---|---|---|
+| `bg-surface` | `--schemes-surface` | Main background |
+| `bg-surface-container` | `--schemes-surface-container` | Cards, elevated areas |
+| `bg-primary-container` | `--schemes-primary-container` | Active/highlighted elements |
+| `text-on-surface` | `--schemes-on-surface` | Primary body text |
+| `text-on-surface-variant` | `--schemes-on-surface-variant` | Secondary/label text |
+| `text-on-primary-container` | `--schemes-on-primary-container` | Text on active elements |
+| `text-primary` | `--schemes-primary` | Brand color, links |
+| `border-outline` | `--schemes-outline` | Borders, dividers |
+| `font-heading` | `--font-family-heading` | Headings (Outfit) |
+| `font-text` | `--font-family-text` | Body / labels (Inter) |
+
+### Dark Mode
+
+Dark Mode is toggled by setting `data-theme="dark"` on `<html>`. The
+`useThemeStore` in `src/shared/stores/theme.store.ts` handles this.
+CSS variables switch automatically – no conditional logic in components needed.
+
 ## Branding / Multi-Tenant
 
 Branding is configured at **runtime**, not build-time. The brand config
 (colors, fonts, feature flags) is loaded from the backend on app startup and
-applied via CSS custom properties.
+overrides the default CSS custom properties:
 
 ```css
+/* Defaults live in src/styles/tokens.css */
 :root {
-  --color-primary: var(--brand-color-primary, #063844);
-  --color-secondary: var(--brand-color-secondary, #3D6EEE);
-  --font-family: var(--brand-font-family, 'Outfit', sans-serif);
+  --schemes-primary: #006a58;
+  --font-family-heading: 'Outfit', system-ui, sans-serif;
 }
+/* Backend overrides these per tenant at runtime */
 ```
 
 No separate branding repository is needed.
@@ -871,6 +901,24 @@ const course: Course = response.data;
 ```typescript
 // GOOD
 const course = CourseSchema.parse(response.data);
+```
+
+---
+
+❌ **Don't use hardcoded color values**:
+
+```typescript
+// BAD – breaks Dark Mode, breaks multi-tenant branding
+<div style={{ backgroundColor: '#c7f0e9', color: '#004f42' }}>
+<div className="text-[#3f4948] bg-[#ffffff]">
+```
+
+✅ **Always use token-based Tailwind classes**:
+
+```typescript
+// GOOD – switches automatically with Dark Mode and tenant branding
+<div className="bg-primary-container text-on-primary-container">
+<div className="text-on-surface-variant bg-surface">
 ```
 
 ## Backend Interaction
