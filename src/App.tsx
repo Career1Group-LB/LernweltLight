@@ -15,6 +15,7 @@ import { router } from '@/router/routes';
 // )
 export default function App() {
   return (
+
     <QueryProvider>           {/* ← React Query für die gesamte App */}
       <RouterProvider router={router} />  {/* ← Router mit allen Seiten */}
     </QueryProvider>

@@ -1,4 +1,24 @@
-/* Global styles – kept minimal, most styling in components */
+@import "tailwindcss";
+@import "./styles/tokens.css";
+/* ← neu */
+
+@theme {
+  /* Farben: Tailwind-Klassen nutzen unsere CSS-Variablen */
+  --color-primary: var(--schemes-primary);
+  --color-primary-container: var(--schemes-primary-container);
+  --color-on-primary-container: var(--schemes-on-primary-container);
+  --color-surface: var(--schemes-surface);
+  --color-surface-container: var(--schemes-surface-container);
+  --color-on-surface: var(--schemes-on-surface);
+  --color-on-surface-variant: var(--schemes-on-surface-variant);
+  --color-outline: var(--schemes-outline);
+
+  /* Schriften */
+  --font-heading: var(--font-family-heading);
+  --font-text: var(--font-family-text);
+}
+
+/* ─── RESET ──────────────────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -8,9 +28,5 @@
 }
 
 html {
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
