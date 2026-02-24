@@ -11,6 +11,9 @@
     "loading": "Laden..."
   },
   "navigation": {
+    "dashboard": "Dashboard",
+    "learningPlan": "Lernplan",
+    "notes": "Notizen",
     "courses": "Kurse",
     "profile": "Profil",
     "certificates": "Zertifikate",

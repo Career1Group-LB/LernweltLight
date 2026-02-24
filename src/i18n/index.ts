@@ -1,9 +1,10 @@
-import i18n from 'i18next';
+import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next } from 'react-i18next';
 
-i18n
+// eslint-disable-next-line import-x/no-named-as-default-member
+i18next
     // Lädt Übersetzungsdateien lazy – nur wenn ein Namespace gebraucht wird
     // Flutter-Analogie: Lazy Loading von ARB-Dateien statt alles auf einmal
     .use(
@@ -39,4 +40,4 @@ i18n
         debug: import.meta.env.DEV,
     });
 
-export default i18n;
+export default i18next;
