@@ -494,6 +494,48 @@ Dark Mode is toggled by setting `data-theme="dark"` on `<html>`. The
 `useThemeStore` in `src/shared/stores/theme.store.ts` handles this.
 CSS variables switch automatically – no conditional logic in components needed.
 
+### CSS Cascade Layers – Critical Rule for `src/index.css`
+
+In Tailwind v4, all utility classes live inside `@layer utilities`. Any CSS written
+**outside** a `@layer` block is "unlayered" and wins over all layered styles – including
+Tailwind utilities – regardless of specificity. This means a bare `* { padding: 0 }`
+reset will silently override every `p-*`, `py-*`, `pl-*` etc. class in the entire app.
+
+**All custom base styles and resets must be placed inside `@layer base`:**
+
+```css
+/* ❌ BAD – silently overrides ALL Tailwind padding/margin utility classes */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+}
+
+/* ✅ GOOD – stays in the layer stack; Tailwind utilities win as intended */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+}
+```
+
+The cascade priority order in Tailwind v4:
+```
+unlayered CSS  >  @layer utilities  >  @layer components  >  @layer base
+```
+
+Symptom when this rule is violated: Tailwind spacing classes (`p-*`, `m-*`, `gap-*`, etc.)
+appear to have no effect; DevTools Box Model shows padding/margin as `0`.
+
 ## Branding / Multi-Tenant
 
 Branding is configured at **runtime**, not build-time. The brand config
