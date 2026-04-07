@@ -9,8 +9,7 @@ import { Sidebar } from './Sidebar';
 export function AppLayout() {
     return (
         // Äußerer Container: Alles nebeneinander (Flexbox)
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
-
+        <div className="flex min-h-screen bg-surface-container">
             {/* Sidebar links */}
             <Sidebar />
 

@@ -24,6 +24,8 @@ i18next
         // Standard-Namespace (wird geladen wenn kein Namespace angegeben)
         defaultNS: 'common',
 
+        ns: ['common'],          // ← neu
+
         // Alle verfügbaren Sprachen
         supportedLngs: ['de', 'en'],
 

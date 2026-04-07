@@ -21,6 +21,7 @@
     "i18next": "^25.8.11",
     "i18next-browser-languagedetector": "^8.2.1",
     "i18next-resources-to-backend": "^1.2.1",
+    "material-symbols": "^0.40.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-error-boundary": "^6.1.1",

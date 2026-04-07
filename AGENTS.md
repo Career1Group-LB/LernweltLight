@@ -193,6 +193,56 @@ export function useCompleteActivity() {
 }
 ```
 
+**Every mutation that changes server data must invalidate the affected queries
+in `onSuccess` or `onSettled`.** This ensures the UI stays in sync.
+
+#### Optimistic Updates (v5 Pattern)
+
+React Query v5 supports optimistic updates directly through the mutation's
+`isPending` state and `variables` – no cache manipulation required:
+
+```typescript
+export function useUpdateCourseTitle(courseId: string) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (title: string) => coursesApi.updateTitle(courseId, title),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(courseId) });
+    },
+  });
+
+  return mutation;
+}
+
+// In the component – show optimistic value while mutation is pending:
+{mutation.isPending ? mutation.variables : course.title}
+```
+
+For complex cases where you need cache-level rollback, use the `onMutate` /
+`onError` / `onSettled` pattern:
+
+```typescript
+const mutation = useMutation({
+  mutationFn: updateFn,
+  onMutate: async (newData) => {
+    await queryClient.cancelQueries({ queryKey });
+    const previous = queryClient.getQueryData(queryKey);
+    queryClient.setQueryData(queryKey, newData);
+    return { previous };
+  },
+  onError: (_err, _newData, context) => {
+    queryClient.setQueryData(queryKey, context?.previous);
+  },
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey });
+  },
+});
+```
+
+Prefer the v5 UI-based pattern (simpler, less error-prone) unless you need
+instant cache updates across multiple components.
+
 #### Query Key Convention
 
 Use consistent, hierarchical query keys:
@@ -207,6 +257,62 @@ Use consistent, hierarchical query keys:
 ['profile']                         // Current user profile
 ['config']                          // App config / feature flags
 ```
+
+#### Query Key Factory
+
+Instead of hardcoding query key arrays across hooks, use a central factory in
+`shared/utils/queryKeys.ts`:
+
+```typescript
+// shared/utils/queryKeys.ts
+export const queryKeys = {
+  courses: {
+    all: () => ['courses'] as const,
+    detail: (id: string) => ['courses', id] as const,
+    modules: (id: string) => ['courses', id, 'modules'] as const,
+  },
+  progress: {
+    byCourse: (courseId: string) => ['progress', courseId] as const,
+  },
+  config: {
+    all: () => ['config'] as const,
+  },
+  profile: {
+    current: () => ['profile'] as const,
+  },
+  quiz: {
+    detail: (id: string) => ['quiz', id] as const,
+    results: (id: string) => ['quiz', id, 'results'] as const,
+  },
+} as const;
+```
+
+Usage in hooks and invalidation:
+
+```typescript
+// In query hooks:
+useQuery({ queryKey: queryKeys.courses.detail(courseId), queryFn: ... });
+
+// When invalidating after mutations:
+queryClient.invalidateQueries({ queryKey: queryKeys.courses.all() });
+```
+
+Benefits: type-safe keys, autocomplete, no typos, easy hierarchical
+invalidation, and a single place to see all keys at a glance.
+
+#### React Query v5 Notes
+
+This project uses TanStack React Query **v5**. Key naming differences from v4:
+
+| v4 | v5 (this project) |
+|---|---|
+| `isLoading` (initial load) | `isPending` |
+| `isInitialLoading` | Deprecated → use `isLoading` (`isPending && isFetching`) |
+| `cacheTime` | `gcTime` (garbage collection time) |
+| `keepPreviousData: true` | `placeholderData: keepPreviousData` |
+| `Hydrate` | `HydrationBoundary` |
+
+Always use the v5 names in new code.
 
 ### Client State with Zustand
 
@@ -238,12 +344,22 @@ export const useUIStore = create<UIState>((set) => ({
 | Data from an API | React Query |
 | Loading/error states for API data | React Query |
 | Caching API responses | React Query |
+| Background refetching / stale data | React Query |
+| Paginated or infinite lists | React Query (`useInfiniteQuery`) |
+| Prefetching data (hover, route change) | React Query (`queryClient.prefetchQuery`) |
+| Write operations / form submissions | React Query (`useMutation`) |
 | Sidebar open/closed | Zustand |
 | Currently selected filter | Zustand (or URL params) |
 | Form input values | `useState` |
 | Modal open/closed | `useState` |
-| Auth state (current user, token) | Zustand (`useAuth`) |
+| Auth token / login status | Zustand (`useAuth`) |
+| User profile data (name, email, role) | React Query (server state) |
 | Theme / branding config | React Context |
+| Feature flags | React Query (`staleTime: Infinity`) |
+
+**Key boundary**: if data originates from an API, it belongs in React Query –
+even if it rarely changes (use `staleTime: Infinity`). Zustand is exclusively
+for state that never existed on a server (UI toggles, local preferences).
 
 ## TypeScript
 
@@ -826,12 +942,96 @@ describe('useCourses', () => {
 });
 ```
 
+### React Query Test Utilities
+
+Every test that renders hooks or components using React Query needs a fresh
+`QueryClient` wrapped in `QueryClientProvider`. Use a shared helper:
+
+```typescript
+// shared/test/test-utils.tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, type RenderOptions } from '@testing-library/react';
+import type { ReactElement, ReactNode } from 'react';
+
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+}
+
+export function createQueryWrapper() {
+  const queryClient = createTestQueryClient();
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+  };
+}
+
+export function renderWithQuery(
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>,
+) {
+  return render(ui, { wrapper: createQueryWrapper(), ...options });
+}
+```
+
+**Requirements:**
+
+- `retry: false` – tests must not retry failed requests (deterministic results)
+- `gcTime: 0` – prevent stale cache from leaking between tests
+- Always create a **new** `QueryClient` per test (never share across tests)
+
+### MSW Request Handlers
+
+Use [Mock Service Worker](https://mswjs.io/) to intercept network requests in
+tests. Organize handlers per feature:
+
+```
+src/
+├── mocks/
+│   ├── server.ts         # MSW setupServer() for Vitest
+│   ├── handlers.ts       # Aggregate all feature handlers
+│   └── handlers/
+│       ├── courses.ts    # Handlers for /api/v1/content/courses/*
+│       ├── auth.ts       # Handlers for /api/v1/auth/*
+│       └── config.ts     # Handlers for /api/v1/config
+```
+
+```typescript
+// mocks/handlers/courses.ts
+import { http, HttpResponse } from 'msw';
+
+export const courseHandlers = [
+  http.get('/api/v1/content/courses', () =>
+    HttpResponse.json([{ id: '1', title: 'Kurs A' }]),
+  ),
+];
+```
+
+```typescript
+// mocks/server.ts
+import { setupServer } from 'msw/node';
+import { handlers } from './handlers';
+
+export const server = setupServer(...handlers);
+```
+
+Override specific handlers in individual tests with `server.use(...)` for
+error scenarios or edge cases.
+
 ### What to Test
 
-- **Hooks**: Query/mutation behavior, error handling
+- **Hooks**: Query/mutation behavior, error handling, loading states
 - **Components**: Rendering, user interactions, state changes
 - **API functions**: Zod schema validation, request formatting
 - **Utils**: Pure function logic
+- **Mutations**: Successful invalidation, optimistic rollback on error
 
 ## Setup Commands
 
@@ -1025,6 +1225,77 @@ const course: Course = response.data;
 ```typescript
 // GOOD
 const course = CourseSchema.parse(response.data);
+```
+
+---
+
+❌ **Don't store server data in Zustand**:
+
+```typescript
+// BAD – user profile is server state, not client state
+const useUserStore = create((set) => ({
+  user: null,
+  setUser: (user) => set({ user }),
+}));
+```
+
+✅ **Use React Query for all server-originating data**:
+
+```typescript
+// GOOD – server data belongs in React Query
+export function useProfile() {
+  return useQuery({
+    queryKey: queryKeys.profile.current(),
+    queryFn: profileApi.getProfile,
+  });
+}
+```
+
+---
+
+❌ **Don't forget query invalidation after mutations**:
+
+```typescript
+// BAD – cache stays stale, UI shows old data
+const mutation = useMutation({
+  mutationFn: coursesApi.updateCourse,
+  onSuccess: () => {
+    toast('Gespeichert!');
+  },
+});
+```
+
+✅ **Always invalidate affected queries**:
+
+```typescript
+// GOOD – related queries refetch automatically
+const mutation = useMutation({
+  mutationFn: coursesApi.updateCourse,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.courses.all() });
+    toast('Gespeichert!');
+  },
+});
+```
+
+---
+
+❌ **Don't use v4 property names in v5**:
+
+```typescript
+// BAD – v4 naming, won't work as expected in v5
+const { isLoading } = useQuery(...); // isLoading changed meaning in v5
+useQuery({ cacheTime: 5000 });       // renamed to gcTime
+```
+
+✅ **Use v5 property names**:
+
+```typescript
+// GOOD – v5 naming
+const { isPending, isLoading } = useQuery(...);
+// isPending = no data yet (initial load)
+// isLoading = isPending && isFetching
+useQuery({ gcTime: 5000 });
 ```
 
 ---

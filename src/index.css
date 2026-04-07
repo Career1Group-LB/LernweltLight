@@ -1,5 +1,6 @@
 @import "tailwindcss";
-@import "./styles/tokens.css";
+@import "material-symbols/rounded";
+@import "./styles/token.css";
 /* ← neu */
 
 @theme {
@@ -19,14 +20,17 @@
 }
 
 /* ─── RESET ──────────────────────────────────────────────────────────────── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@layer base {
 
-html {
-  -webkit-font-smoothing: antialiased;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
 }
