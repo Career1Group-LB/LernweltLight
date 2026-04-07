@@ -1,0 +1,188 @@
+---
+description: Vereinfachte Befehle für die installierten Vercel Agent Skills. Reagiert auf Befehle wie "/review-ui", "/review-perf" oder "/review-composition".
+globs:
+alwaysApply: false
+---
+
+# Skills Workflow Commands
+
+Diese Regel definiert vereinfachte Befehle, die auf die installierten Vercel
+Agent Skills zugreifen. Die Skills liegen in `.agents/skills/`.
+
+---
+
+## 🎨 UI Review
+
+**Trigger:** `/review-ui [Datei oder Ordner]`
+
+Beispiele:
+- `/review-ui src/layouts/Sidebar.tsx`
+- `/review-ui src/features/courses/components/`
+- `/review-ui` (prüft alle kürzlich geänderten Dateien)
+
+**Ablauf:**
+
+1. **Skill laden:** Lies `.agents/skills/web-design-guidelines/AGENTS.md` (lokale Kopie der Regeln – kein Netzwerk-Aufruf nötig)
+
+2. **Dateien analysieren:** Lese die angegebenen Dateien (oder alle `.tsx`-Dateien
+   im `src/`-Verzeichnis, falls keine angegeben).
+
+3. **Prüfe gegen alle Regeln aus dem Skill:**
+   - ✅ Accessibility (aria-label, semantisches HTML, Keyboard-Handler)
+   - ✅ Focus States (focus-visible, kein outline-none ohne Ersatz)
+   - ✅ Forms (autocomplete, korrekte input-Typen, Labels)
+   - ✅ Animation (prefers-reduced-motion, nur transform/opacity)
+   - ✅ Typography (Ellipsen, Anführungszeichen, tabular-nums)
+   - ✅ Content Handling (truncate, min-w-0, leere Zustände)
+   - ✅ Performance (Virtualisierung bei >50 Items, kein Layout Thrashing)
+   - ✅ Dark Mode & Theming (color-scheme, keine hardcodierten Farben)
+   - ✅ i18n (Intl.DateTimeFormat statt hardcoded Formate)
+   - ✅ Anti-Patterns (user-scalable=no, transition:all, etc.)
+
+4. **Ausgabe im Format:**
+   ```
+   ## src/layouts/Sidebar.tsx
+
+   src/layouts/Sidebar.tsx:12 - icon button missing aria-label
+   src/layouts/Sidebar.tsx:34 - hover state fehlt
+   src/layouts/Sidebar.tsx:55 - animation missing prefers-reduced-motion
+
+   ## src/features/courses/components/CourseCard.tsx
+
+   ✓ pass
+   ```
+
+5. **Antwort auf Deutsch.**
+
+---
+
+## ⚡ Performance Review
+
+**Trigger:** `/review-perf [Datei oder Ordner]`
+
+Beispiele:
+- `/review-perf src/features/courses/hooks/useCourses.ts`
+- `/review-perf src/features/`
+- `/review-perf` (prüft alle kürzlich geänderten Dateien)
+
+**Ablauf:**
+
+1. **Skill laden:** Lies `.agents/skills/vercel-react-best-practices/AGENTS.md`
+
+2. **Dateien analysieren:** Lese die angegebenen Dateien.
+
+3. **Fokus auf die wichtigsten Kategorien (nach Priorität):**
+
+   🔴 **CRITICAL – Async Waterfalls:**
+   - Sequentielle `await`-Ketten die parallel laufen könnten
+   - Guard Clauses vor teuren `await`-Calls fehlen
+   - Kein `Promise.all()` bei unabhängigen Operationen
+
+   🔴 **CRITICAL – Bundle Size:**
+   - Barrel-File-Imports aus großen Libraries (lucide-react, @mui, etc.)
+   - Fehlende `dynamic()`-Imports für schwere Komponenten
+
+   🟠 **HIGH – Re-render Optimierung:**
+   - Derived State in `useEffect` statt direkt berechnet
+   - Zu breite `useEffect`-Dependencies (ganzes Objekt statt einzelne Felder)
+   - `useMemo` für primitive Werte
+
+   🟡 **MEDIUM – JavaScript Performance:**
+   - `.find()` in Loops statt Map-Lookup
+   - Mehrere `.filter()` über dasselbe Array statt ein Loop
+   - `localStorage`-Zugriffe ohne Cache
+
+4. **Ausgabe:**
+   ```
+   ## src/features/courses/hooks/useCourses.ts
+
+   src/features/courses/hooks/useCourses.ts:23 - [CRITICAL] Sequentielle awaits könnten mit Promise.all() parallelisiert werden
+   src/features/courses/hooks/useCourses.ts:45 - [HIGH] useEffect-Dependency auf ganzes Objekt, nur user.id wird genutzt
+
+   ## src/features/courses/components/CourseList.tsx
+
+   ✓ pass
+   ```
+
+5. **Antwort auf Deutsch.**
+
+---
+
+## 🏗️ Composition Review
+
+**Trigger:** `/review-composition [Datei oder Ordner]`
+
+Beispiele:
+- `/review-composition src/features/courses/components/CourseCard.tsx`
+- `/review-composition src/shared/components/`
+
+**Ablauf:**
+
+1. **Skill laden:** Lies `.agents/skills/vercel-composition-patterns/AGENTS.md`
+
+2. **Dateien analysieren:** Lese die angegebenen Dateien.
+
+3. **Prüfe gegen Composition-Regeln:**
+   - ✅ Boolean Prop Proliferation (zu viele `isX`-Props?)
+   - ✅ Compound Components (sollte das als Compound Component gebaut werden?)
+   - ✅ State Lifting (State in Provider statt in UI-Komponente)
+   - ✅ Explizite Varianten (statt einer Komponente mit vielen Flags)
+   - ✅ Children über Render Props
+
+4. **Ausgabe mit konkreten Verbesserungsvorschlägen:**
+   ```
+   ## src/features/courses/components/CourseCard.tsx
+
+   src/features/courses/components/CourseCard.tsx:5 - Boolean Prop Proliferation:
+     isHighlighted, isCompleted, isLocked könnten als explizite Varianten
+     (HighlightedCourseCard, CompletedCourseCard) gelöst werden.
+
+   ## src/shared/components/Button.tsx
+
+   ✓ pass
+   ```
+
+5. **Antwort auf Deutsch.**
+
+---
+
+## 🔍 Full Review
+
+**Trigger:** `/review-full [Datei oder Ordner]`
+
+Führt alle drei Reviews nacheinander aus: UI, Performance und Composition.
+
+Beispiele:
+- `/review-full src/layouts/Sidebar.tsx`
+- `/review-full src/features/courses/`
+
+**Ablauf:**
+
+1. Führe `/review-ui` aus
+2. Führe `/review-perf` aus
+3. Führe `/review-composition` aus
+4. Fasse die Ergebnisse zusammen nach Priorität:
+   - 🔴 Kritisch (sofort beheben)
+   - 🟠 Hoch
+   - 🟡 Mittel
+   - 🟢 Niedrig
+
+5. **Antwort auf Deutsch.**
+
+---
+
+## 🔧 Hilfe
+
+**Trigger:** `/skills-help`
+
+Zeige verfügbare Befehle:
+
+- `/review-ui [Datei]` – Accessibility, Focus, Forms, Dark Mode, i18n
+- `/review-perf [Datei]` – Waterfalls, Bundle Size, Re-renders, JS Performance
+- `/review-composition [Datei]` – Boolean Props, Compound Components, State Lifting
+- `/review-full [Datei]` – Alle drei Reviews kombiniert
+
+Installierte Skills: `.agents/skills/`
+- `vercel-react-best-practices/` – 40+ Performance-Regeln
+- `vercel-composition-patterns/` – Composition-Muster
+- `web-design-guidelines/` – UI/UX/Accessibility-Regeln

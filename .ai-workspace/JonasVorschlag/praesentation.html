@@ -1,0 +1,1902 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frontend Foundation – Architecture Proposal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #08090d;
+            --bg-card: #0f1117;
+            --bg-card-hover: #161822;
+            --border: #1e2030;
+            --text: #e4e4e7;
+            --text-muted: #71717a;
+            --text-dim: #52525b;
+            --gold: #aa7939;
+            --gold-light: #c09a6d;
+            --gold-pale: #ead9cf;
+            --gold-dark: #966b32;
+            --accent: #aa7939;
+            --green: #22c55e;
+            --red: #ef4444;
+            --blue: #3b82f6;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family:
+                "Inter",
+                -apple-system,
+                sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ead9cf, #c09a6d, #aa7939, #966b32);
+            z-index: 1000;
+            transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 0 20px rgba(170, 121, 57, 0.4);
+        }
+
+        /* Slide Counter */
+        .slide-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: "JetBrains Mono", monospace;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            z-index: 100;
+            letter-spacing: 0.05em;
+        }
+
+        /* Navigation Hints */
+        .nav-hint {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            z-index: 100;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .nav-hint kbd {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-family: "JetBrains Mono", monospace;
+            font-size: 0.7rem;
+        }
+
+        /* Slides Container */
+        .slides {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 6rem;
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(30px);
+            pointer-events: none;
+            transition:
+                opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .slide.exit-up {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .slide-content {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.75rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+        }
+
+        .gold {
+            color: var(--gold);
+        }
+
+        .gold-light {
+            color: var(--gold-light);
+        }
+
+        .green {
+            color: var(--green);
+        }
+
+        .red {
+            color: var(--red);
+        }
+
+        .blue {
+            color: var(--blue);
+        }
+
+        .dim {
+            color: var(--text-dim);
+        }
+
+        .mono {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 0.9em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg,
+                    #ead9cf 0%,
+                    #c09a6d 40%,
+                    #aa7939 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Cards / Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            border-color: rgba(150, 107, 50, 0.3);
+        }
+
+        /* ========== EFFECT: Card Proximity Glow ========== */
+        .card {
+            transition: border-color 0.6s ease, box-shadow 0.6s ease;
+        }
+
+        /* ========== END: Card Proximity Glow ========== */
+
+        .card-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.5rem;
+        }
+
+        .card h4 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Tag */
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            font-family: "JetBrains Mono", monospace;
+        }
+
+        .tag-gold {
+            background: rgba(170, 121, 57, 0.15);
+            color: var(--gold-light);
+        }
+
+        .tag-green {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--green);
+        }
+
+        .tag-red {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--red);
+        }
+
+        .tag-blue {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--blue);
+        }
+
+        .tag-dim {
+            background: rgba(113, 113, 122, 0.12);
+            color: var(--text-muted);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Comparison */
+        .vs {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .vs-item {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .vs-item.chosen {
+            border-color: var(--gold);
+            box-shadow: 0 0 30px rgba(170, 121, 57, 0.1);
+        }
+
+        .vs-divider {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dim);
+        }
+
+        /* Lists */
+        ul.check {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        ul.check li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        ul.check li::before {
+            content: "✓";
+            color: var(--gold);
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        ul.cross li::before {
+            content: "✗";
+            color: var(--red);
+        }
+
+        /* Decorative */
+        .line-accent {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-pale));
+            border-radius: 2px;
+            margin-bottom: 1.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-top: 1rem;
+        }
+
+        /* Pipeline visual */
+        .pipeline {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex-wrap: wrap;
+        }
+
+        .pipeline-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: "JetBrains Mono", monospace;
+            color: var(--text);
+        }
+
+        .pipeline-arrow {
+            color: var(--gold);
+            font-size: 1.2rem;
+            padding: 0 0.4rem;
+        }
+
+        /* Stack visual */
+        .stack-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .stack-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .stack-item .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot-gold {
+            background: var(--gold);
+        }
+
+        .dot-green {
+            background: var(--green);
+        }
+
+        .dot-blue {
+            background: var(--blue);
+        }
+
+        .dot-red {
+            background: var(--red);
+        }
+
+        /* Animated elements */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(15px);
+            transition:
+                opacity 0.5s ease,
+                transform 0.5s ease;
+        }
+
+        .slide.active .fade-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slide.active .fade-in:nth-child(1) {
+            transition-delay: 0.1s;
+        }
+
+        .slide.active .fade-in:nth-child(2) {
+            transition-delay: 0.2s;
+        }
+
+        .slide.active .fade-in:nth-child(3) {
+            transition-delay: 0.3s;
+        }
+
+        .slide.active .fade-in:nth-child(4) {
+            transition-delay: 0.4s;
+        }
+
+        .stagger>* {
+            opacity: 0;
+            transform: translateY(12px);
+            transition:
+                opacity 0.4s ease,
+                transform 0.4s ease;
+        }
+
+        .slide.active .stagger>*:nth-child(1) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.1s;
+        }
+
+        .slide.active .stagger>*:nth-child(2) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.15s;
+        }
+
+        .slide.active .stagger>*:nth-child(3) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.2s;
+        }
+
+        .slide.active .stagger>*:nth-child(4) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.25s;
+        }
+
+        .slide.active .stagger>*:nth-child(5) {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.3s;
+        }
+
+        /* Background glow */
+        .glow {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle,
+                    rgba(170, 121, 57, 0.06) 0%,
+                    transparent 70%);
+            pointer-events: none;
+        }
+
+        .glow-tr {
+            top: -200px;
+            right: -200px;
+        }
+
+        .glow-bl {
+            bottom: -200px;
+            left: -200px;
+        }
+
+        /* ========== EFFECT: Aurora Blobs ========== */
+        .aurora-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .aurora-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0;
+            animation: auroraFade 1.5s ease forwards;
+        }
+
+        .aurora-blob-1 {
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(170, 121, 57, 0.25) 0%, rgba(192, 154, 109, 0.08) 45%, transparent 70%);
+            top: 10%;
+            left: 10%;
+            animation: auroraWander 45s ease-in-out infinite, auroraFade 2s ease forwards;
+        }
+
+        @keyframes auroraFade {
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes auroraWander {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            8% {
+                transform: translate(25vw, 10vh) scale(1.1);
+            }
+
+            16% {
+                transform: translate(50vw, -5vh) scale(0.9);
+            }
+
+            24% {
+                transform: translate(35vw, 40vh) scale(1.15);
+            }
+
+            32% {
+                transform: translate(10vw, 55vh) scale(0.95);
+            }
+
+            40% {
+                transform: translate(-10vw, 35vh) scale(1.1);
+            }
+
+            48% {
+                transform: translate(20vw, 15vh) scale(0.85);
+            }
+
+            56% {
+                transform: translate(55vw, 30vh) scale(1.05);
+            }
+
+            64% {
+                transform: translate(40vw, 60vh) scale(1.15);
+            }
+
+            72% {
+                transform: translate(5vw, 45vh) scale(0.9);
+            }
+
+            80% {
+                transform: translate(-5vw, 10vh) scale(1.1);
+            }
+
+            88% {
+                transform: translate(30vw, -5vh) scale(0.95);
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+        .aurora-glass {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            backdrop-filter: blur(40px) saturate(1.3);
+            -webkit-backdrop-filter: blur(40px) saturate(1.3);
+            pointer-events: none;
+        }
+
+        /* ========== END: Aurora Blobs ========== */
+
+        .mb-1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 2rem;
+        }
+
+        .mt-2 {
+            margin-top: 1rem;
+        }
+
+        .mt-3 {
+            margin-top: 1.5rem;
+        }
+
+        .mt-4 {
+            margin-top: 2rem;
+        }
+
+        .gap-3 {
+            gap: 1.5rem;
+        }
+
+        /* Slide Selector Tray */
+        .slide-tray {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 500;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0 2rem 1rem;
+            pointer-events: none;
+            transform: translateY(100%);
+            opacity: 0;
+            transition:
+                transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .slide-tray.visible {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .slide-tray-inner {
+            display: flex;
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(15, 17, 23, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 -4px 40px rgba(0, 0, 0, 0.5);
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .slide-tray-inner::-webkit-scrollbar {
+            height: 0;
+        }
+
+        .slide-thumb {
+            flex-shrink: 0;
+            width: 110px;
+            height: 66px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background: var(--bg-card);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            transition:
+                border-color 0.2s,
+                background 0.2s,
+                transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-thumb:hover {
+            border-color: var(--gold-dark);
+            background: var(--bg-card-hover);
+            transform: translateY(-3px);
+        }
+
+        .slide-thumb.active {
+            border-color: var(--gold);
+            box-shadow: 0 0 12px rgba(170, 121, 57, 0.25);
+        }
+
+        .slide-thumb-num {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 0.6rem;
+            color: var(--gold);
+            margin-bottom: 2px;
+        }
+
+        .slide-thumb-title {
+            font-size: 0.55rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.3;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .slide-hover-zone {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 24px;
+            z-index: 499;
+        }
+
+        /* Phase Container for Summary Slide */
+        .phase-col {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .phase-header {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .summary-num {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 0.7rem;
+            color: var(--gold);
+            background: rgba(170, 121, 57, 0.15);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ========== EFFECT: Aurora Blobs ========== -->
+    <div class="aurora-container">
+        <div class="aurora-blob aurora-blob-1"></div>
+    </div>
+    <div class="aurora-glass"></div>
+    <!-- ========== END: Aurora Blobs ========== -->
+
+    <div class="progress-bar" id="progress"></div>
+    <div class="slide-counter" id="counter"></div>
+    <div class="nav-hint"><kbd>←</kbd><kbd>→</kbd> navigieren</div>
+
+    <div class="slide-hover-zone" id="hoverZone"></div>
+    <div class="slide-tray" id="slideTray">
+        <div class="slide-tray-inner" id="slideTrayInner"></div>
+    </div>
+
+    <div class="slides" id="slides">
+        <div class="slide active" data-index="0">
+            <div class="glow glow-tr"></div>
+            <div class="slide-content" style="text-align: center">
+                <h1 class="fade-in">
+                    <span class="gradient-text">Frontend Foundation</span>
+                </h1>
+                <p class="subtitle fade-in">
+                    One Tech Stack. Greenfield Foundation. 14 Proposed ADRs.
+                </p>
+                <div style="
+              margin-top: 2.5rem;
+              display: flex;
+              gap: 0.75rem;
+              justify-content: center;
+            " class="fade-in">
+                    <span class="tag tag-dim">Status: Proposed</span>
+                    <span class="tag tag-dim">März 2026</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="1">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-001 | Core Architecture</h3>
+                <h2 class="fade-in">3 unabhängige Web-Apps</h2>
+                <div class="grid-3 stagger">
+                    <div class="card" style="text-align: center">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem">🏗️</div>
+                        <h4>Product World</h4>
+                        <p>CMS → Redaktion</p>
+                    </div>
+                    <div class="card" style="text-align: center">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem">📚</div>
+                        <h4>Lernwelt</h4>
+                        <p>Lernapp → Teilnehmer</p>
+                    </div>
+                    <div class="card" style="text-align: center">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem">👥</div>
+                        <h4>Client Office</h4>
+                        <p>Dashboard → Customer Success</p>
+                    </div>
+                </div>
+                <div class="fade-in mt-3 glow-target" style="
+              background: var(--bg-card);
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              padding: 1rem 1.5rem;
+            ">
+                    <p style="font-size: 0.95rem; color: var(--text-muted)">
+                        Eigenes Repo, eigenes Deployment, eigener Release-Zyklus —
+                        <strong class="gold-light">gleiche Technologien, lose gekoppelt</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="2">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-002 | Core Architecture</h3>
+                <h2 class="fade-in">Shared Code</h2>
+                <div class="grid-2 stagger">
+                    <div>
+                        <div class="card" style="border-left: 3px solid var(--red)">
+                            <div class="card-label" style="color: var(--red)">Heute</div>
+                            <h4>
+                                "UI-Library"
+                                <span style="font-weight: 400; color: var(--text-dim)">(die
+                                    Abhängigkeits-Library)</span>
+                            </h4>
+                            <p>
+                                shared-ui mixt API Services, Komponenten, Views und Utils.
+                                Jede Änderung betrifft potenziell Client Office und Data
+                                Office gleichzeitig.
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card" style="border-left: 3px solid var(--green)">
+                            <div class="card-label" style="color: var(--green)">Neu</div>
+                            <h4>Ein Package: Auth + API Client</h4>
+                            <p>
+                                Ein privates npm-Package mit dem Code der in allen Apps
+                                identisch laufen muss. Versioniert und per
+                                <span class="mono">npm update</span> aktualisierbar.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in mt-3 glow-target" style="
+              background: var(--bg-card);
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              padding: 1rem 1.5rem;
+            ">
+                    <p style="font-size: 0.9rem; color: var(--text-muted)">
+                        <strong class="gold-light">Keine shared-ui mehr.</strong>
+                        UI-Komponenten kommen aus einer Registry, werden ins Projekt
+                        importiert und dort projektspezifisch angepasst. Keine gemeinsame
+                        Dependency, kein Breaking Change in anderen Apps.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="3">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-003 | Core Architecture</h3>
+                <h2 class="fade-in">Feature-basierte Struktur</h2>
+                <div class="grid-2 stagger">
+                    <div class="glow-target" style="
+                background: #0d0e14;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 1.2rem;
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 0.75rem;
+                line-height: 1.8;
+              ">
+                        src/<br />
+                        &nbsp;&nbsp;app/
+                        <span class="dim">// Globaler Setup (Router, Providers)</span><br />
+                        &nbsp;&nbsp;features/<br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="gold-light">course-management/</span><br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;components/<br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hooks/<br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;api.ts<br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;index.ts
+                        <span class="dim">// Public API</span><br />
+                        &nbsp;&nbsp;shared/
+                        <span class="dim">// App-weiter Code (z.B. Button.tsx)</span><br />
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Vorteile</div>
+                        <h4 class="mb-2">Warum Feature-basiert?</h4>
+                        <ul class="check">
+                            <li>
+                                <strong>Skalierbarkeit:</strong> Code wächst logisch mit den
+                                Features. Keine endlosen, unübersichtlichen "God-Folders"
+                                (`/components`, `/hooks`).
+                            </li>
+                            <li>
+                                <strong>Isolation:</strong> Ein Feature ist eine geschlossene
+                                Kapsel. Alles (API, UI, State) lebt an einem Ort.
+                            </li>
+                            <li>
+                                <strong>Strikte Boundaries:</strong> Features dürfen nicht
+                                quer aufeinander zugreifen. Kommunikation läuft ausschließlich
+                                über die `index.ts`.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="4">
+            <div class="slide-content">
+                <h3 class="fade-in">Tech Stack</h3>
+                <h2 class="fade-in">Alles auf einen Blick</h2>
+                <div class="stagger" style="max-width: 1000px">
+                    <div class="grid-2 mb-3" style="gap: 1.5rem">
+                        <div>
+                            <div style="
+                    font-size: 0.75rem;
+                    color: var(--text-dim);
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    margin-bottom: 0.5rem;
+                  ">
+                                Framework
+                            </div>
+                            <div class="stack-row">
+                                <div class="stack-item">
+                                    <div class="dot dot-gold"></div>
+                                    React
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-gold"></div>
+                                    TypeScript
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-gold"></div>
+                                    Vite
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="
+                    font-size: 0.75rem;
+                    color: var(--text-dim);
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    margin-bottom: 0.5rem;
+                  ">
+                                UI & Styling
+                            </div>
+                            <div class="stack-row">
+                                <div class="stack-item">
+                                    <div class="dot dot-blue"></div>
+                                    Tailwind CSS
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-blue"></div>
+                                    shadcn/ui
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid-2 mb-3" style="gap: 1.5rem">
+                        <div>
+                            <div style="
+                    font-size: 0.75rem;
+                    color: var(--text-dim);
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    margin-bottom: 0.5rem;
+                  ">
+                                Data, State & Routing
+                            </div>
+                            <div class="stack-row">
+                                <div class="stack-item">
+                                    <div class="dot dot-green"></div>
+                                    TanStack Query
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-green"></div>
+                                    Zustand
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-green"></div>
+                                    TanStack Router
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="
+                    font-size: 0.75rem;
+                    color: var(--text-dim);
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    margin-bottom: 0.5rem;
+                  ">
+                                Linting & Formatting
+                            </div>
+                            <div class="stack-row">
+                                <div class="stack-item">
+                                    <div class="dot dot-red"></div>
+                                    Biome
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-red"></div>
+                                    Husky
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-red"></div>
+                                    Commitlint
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid-2 mb-3" style="gap: 1.5rem">
+                        <div>
+                            <div style="
+                    font-size: 0.75rem;
+                    color: var(--text-dim);
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    margin-bottom: 0.5rem;
+                  ">
+                                Forms & Validation
+                            </div>
+                            <div class="stack-row">
+                                <div class="stack-item">
+                                    <div class="dot dot-green"></div>
+                                    React Hook Form
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-green"></div>
+                                    Zod
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="
+                    font-size: 0.75rem;
+                    color: var(--text-dim);
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    margin-bottom: 0.5rem;
+                  ">
+                                Testing
+                            </div>
+                            <div class="stack-row">
+                                <div class="stack-item">
+                                    <div class="dot dot-red"></div>
+                                    Vitest
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-red"></div>
+                                    React Testing Library
+                                </div>
+                                <div class="stack-item">
+                                    <div class="dot dot-red"></div>
+                                    Playwright
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="5">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-004 | Core Architecture</h3>
+                <h2 class="fade-in">Vite + React</h2>
+
+                <div class="grid-3 stagger mb-3">
+                    <div class="card">
+                        <div class="card-label">Ökosystem</div>
+                        <h4>Industrie-Goldstandard</h4>
+                        <p>
+                            React hat das größte Ökosystem, die breiteste Community und
+                            macht Entwickler-Gewinnung am einfachsten.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Developer Experience</div>
+                        <h4>Schnelles HMR</h4>
+                        <p>
+                            Hot Module Replacement in Millisekunden. Kein Warten, kein
+                            Neuladen — Änderungen sind sofort im Browser sichtbar.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Architektur-Fit</div>
+                        <h4>Kein SSR nötig</h4>
+                        <p>
+                            Alle Produkte leben hinter einem Login. Kein SEO, kein SSR,
+                            keine Server Components — statische Builds reichen.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="6">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-005 | State & Data Flow</h3>
+                <h2 class="fade-in">TanStack Router</h2>
+                <div class="grid-2 stagger">
+                    <div class="card">
+                        <div class="card-label">Typsicherheit</div>
+                        <h4 class="mb-2">100% Typsicherheit</h4>
+                        <p style="font-size: 0.95rem">
+                            URLs, Path-Params und Search-Params sind getypt. Falsche Links
+                            oder fehlende Parameter fallen beim Build auf, nicht erst im
+                            Browser.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Vorteile</div>
+                        <h4 class="mb-2">Warum TanStack Router?</h4>
+                        <ul class="check">
+                            <li>
+                                <strong>Search Params als State:</strong> Kritisch für
+                                komplexe Filter, Suchen und Pagination in der Lernwelt. State
+                                lebt in der URL, nicht lokal.
+                            </li>
+                            <li>
+                                <strong>Nahtlose Integration:</strong> Gebaut vom selben Team
+                                wie TanStack Query. Cache-Prefetching beim Hovern von Links
+                                ist ein Einzeiler.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="7">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-006 | State & Data Flow</h3>
+                <h2 class="fade-in">State Management</h2>
+                <div class="grid-2 stagger">
+                    <div class="card" style="border-color: var(--gold-dark)">
+                        <div class="card-label">Server State (~90%)</div>
+                        <h4 class="mb-2">TanStack Query</h4>
+                        <p class="mb-2">
+                            Der Single Source of Truth für Backend-Daten (Kurse, Profile).
+                            Übernimmt Caching und Fetching vollständig.
+                        </p>
+                        <ul class="check" style="font-size: 0.85rem">
+                            <li>Loading/Error States kommen out-of-the-box.</li>
+                            <li>Automatisches Caching und Background-Refetching.</li>
+                            <li>Globale Verfügbarkeit der Daten ohne Prop-Drilling.</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Client State (~10%)</div>
+                        <h4 class="mb-2">Zustand</h4>
+                        <p class="mb-2">
+                            Nur für flüchtigen UI-State (Sidebars, Theme). Weniger
+                            Boilerplate, mehr Code den wir löschen können.
+                        </p>
+                        <ul class="check" style="font-size: 0.85rem">
+                            <li>Zero Boilerplate (im Gegensatz zu Redux).</li>
+                            <li>Keine unnötigen Re-Renders.</li>
+                            <li>Simples Speichern von Settings in den LocalStorage.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="8">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-007 | State & Data Flow</h3>
+                <h2 class="fade-in">React Hook Form + Zod</h2>
+                <div class="stagger">
+                    <div class="card">
+                        <div class="card-label">Vorteile</div>
+                        <h4 class="mb-2">Warum React Hook Form + Zod?</h4>
+                        <ul class="check">
+                            <li>
+                                <strong>Strikter Contract:</strong> Wir definieren ein
+                                einziges Zod-Schema, das gleichzeitig als Typescript-Type und
+                                als Formular-Validierung dient.
+                            </li>
+                            <li>
+                                <strong>Performant:</strong> Uncontrolled Inputs by Default.
+                                Kein Re-Render bei jedem Tastendruck — relevant für große
+                                CMS-Formulare.
+                            </li>
+                            <li>
+                                <strong>Ökosystem-Fit:</strong> Integriert sich nativ in
+                                TanStack Router (Search Validation) und shadcn/ui.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="9">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-008 | UI Architecture</h3>
+                <h2 class="fade-in">Tailwind CSS</h2>
+                <div class="grid-2 stagger">
+                    <div class="card">
+                        <div class="card-label">Utility-First</div>
+                        <h4 class="mb-2">Warum Utility-First?</h4>
+                        <ul class="check">
+                            <li>
+                                <strong>Geschwindigkeit:</strong> Schnelles Styling direkt im
+                                Code. Kein ständiger Context-Switch zwischen TSX und
+                                CSS-Dateien.
+                            </li>
+                            <li>
+                                <strong>Konsistenz:</strong> Entwickler erfinden keine eigenen
+                                Spacings/Farben mehr, sondern nutzen vordefinierte Token.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Colocation</div>
+                        <h4 class="mb-2">Styles leben am Code</h4>
+                        <p style="font-size: 0.95rem">
+                            Styles leben direkt an der Komponente. Ungenutzte Klassen landen
+                            nicht im Build. Kein Suchen in separaten CSS-Dateien.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="10">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-009 | UI Architecture</h3>
+                <h2 class="fade-in">Kein CSS Preprocessor</h2>
+                <div class="stagger">
+                    <div class="card">
+                        <div class="card-label">Entscheidung</div>
+                        <h4 class="mb-2">Warum kein SCSS/Less?</h4>
+                        <p class="mb-3" style="font-size: 0.95rem">
+                            Strikte Regel: Kein SCSS, kein Less. Wir entfernen diese
+                            Build-Schritte komplett aus unserer Pipeline.
+                        </p>
+                        <ul class="check">
+                            <li>
+                                <strong>Weniger Komplexität:</strong> Eine Build-Dependency
+                                weniger. Keine Kollisionen zwischen SCSS-Syntax und Tailwind.
+                            </li>
+                            <li>
+                                <strong>Natives CSS ist reif:</strong> Variablen (Custom
+                                Properties) und Nesting sind mittlerweile native CSS-Features.
+                                Preprocessors haben ihren Nutzen verloren.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="11">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-010 | UI Architecture</h3>
+                <h2 class="fade-in">Design Tokens & WhiteLabel</h2>
+                <div class="grid-2 stagger">
+                    <div class="card">
+                        <div class="card-label">Theming</div>
+                        <h4 class="mb-2">CSS Custom Properties</h4>
+                        <p class="mb-3" style="font-size: 0.95rem">
+                            Jede App definiert ihre Farben, Fonts und Spacings in der
+                            <span class="mono">globals.css</span>. Komponenten greifen nur
+                            auf Token zu.
+                        </p>
+                        <ul class="check">
+                            <li>
+                                Eine Komponente (z.B. Button) greift auf `bg-primary` zu.
+                            </li>
+                            <li>
+                                Das Token `primary` ist je nach App/Theme unterschiedlich
+                                definiert.
+                            </li>
+                            <li>
+                                Gleiche Komponenten, unterschiedliches Look & Feel pro App —
+                                ohne Code zu duplizieren.
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="glow-target" style="
+                  background: #0d0e14;
+                  border: 1px solid var(--border);
+                  border-radius: 10px;
+                  padding: 1.2rem;
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 0.8rem;
+                  line-height: 1.8;
+                ">
+                            <span class="dim">:root {</span><br />
+                            &nbsp;&nbsp;<span class="gold-light">--primary</span>:
+                            <span class="gold">#aa7939</span>;
+                            <span class="dim">/* Produkt A */</span><br />
+                            <span class="dim">}</span><br /><br />
+                            <span class="dim">[data-theme="product-b"] {</span><br />
+                            &nbsp;&nbsp;<span class="gold-light">--primary</span>:
+                            <span class="blue">#3b82f6</span>;
+                            <span class="dim">/* Produkt B */</span><br />
+                            <span class="dim">}</span>
+                        </div>
+                        <div class="card mt-3" style="text-align: center; padding: 1.5rem">
+                            <div style="display: flex; gap: 1rem; justify-content: center">
+                                <div style="
+                      width: 80px;
+                      height: 50px;
+                      background: linear-gradient(135deg, #aa7939, #c09a6d);
+                      border-radius: 8px;
+                    "></div>
+                                <div style="
+                      display: flex;
+                      align-items: center;
+                      font-size: 1.5rem;
+                      color: var(--text-dim);
+                    ">
+                                    →
+                                </div>
+                                <div style="
+                      width: 80px;
+                      height: 50px;
+                      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+                      border-radius: 8px;
+                    "></div>
+                            </div>
+                            <p style="font-size: 0.8rem; margin-top: 0.75rem">
+                                Globaler Theme-Switch via Token-Swapping
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="12">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-011 | UI Architecture</h3>
+                <h2 class="fade-in">shadcn/ui</h2>
+                <div class="grid-2 stagger">
+                    <div class="card">
+                        <div class="card-label">Konzept</div>
+                        <h4 class="mb-2">Keine Blackbox</h4>
+                        <ul class="check">
+                            <li>
+                                <strong>Wir besitzen den Code:</strong> Komponenten werden als
+                                Source-Code ins Projekt kopiert. Wir haben 100% Kontrolle über
+                                das Markup.
+                            </li>
+                            <li>
+                                <strong>Barrierefreiheit (A11y):</strong> Basiert auf Radix UI
+                                (Fokus-Traps, Screenreader-Support, Keyboard-Nav). Wochenlange
+                                Arbeit wird uns geschenkt.
+                            </li>
+                            <li>
+                                <strong>Flexibilität:</strong> Perfekte Symbiose mit ADR-010
+                                (Design Tokens). Komponenten passen sich automatisch dem
+                                jeweiligen Produkt an.
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="card" style="border-left: 3px solid var(--gold)">
+                            <div class="card-label">AI-Tooling</div>
+                            <p style="font-size: 0.9rem">
+                                shadcn ist breit in LLM-Training-Daten vertreten. Vercels v0
+                                z.B. generiert direkt shadcn-Komponenten.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="13">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-012 | DevEx & Tooling</h3>
+                <h2 class="fade-in">Biome + Husky</h2>
+                <div class="grid-2 stagger">
+                    <div class="card">
+                        <div class="card-label">Tooling</div>
+                        <h4 class="mb-2">Blitzschnelles Tooling</h4>
+                        <ul class="check">
+                            <li>
+                                <strong>Biome ersetzt ESLint + Prettier:</strong> Ein einziges
+                                Tool, das in Millisekunden lintet und formatiert (ca. 25x
+                                schneller).
+                            </li>
+                            <li>
+                                <strong>Pre-Commit Hooks:</strong> Bevor ein Entwickler
+                                committen kann, wird der Code automatisch formatiert und
+                                geprüft.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card" style="border-color: var(--gold-dark)">
+                        <div class="card-label">Ergebnis</div>
+                        <p style="font-size: 0.85rem">
+                            Formatting und Linting passieren automatisch. Kein Diskutieren
+                            über Whitespaces oder Semicolons im Code-Review.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="14">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-013 | DevEx & Tooling</h3>
+                <h2 class="fade-in">Testing Strategy</h2>
+                <div class="grid-3 stagger mb-3">
+                    <div class="card" style="text-align: center">
+                        <div class="card-label">Unit</div>
+                        <h4>Vitest</h4>
+                        <p style="font-size: 0.85rem">
+                            Business-Logik, Utilities, Zod-Schemas. Schnell durch
+                            Vite-Integration.
+                        </p>
+                    </div>
+                    <div class="card" style="text-align: center">
+                        <div class="card-label">Component</div>
+                        <h4>React Testing Library</h4>
+                        <p style="font-size: 0.85rem">
+                            Komponenten-Verhalten aus User-Sicht: Klicks, Formulare,
+                            Rendering — ohne echten Browser.
+                        </p>
+                    </div>
+                    <div class="card" style="text-align: center">
+                        <div class="card-label">End-to-End</div>
+                        <h4>Playwright</h4>
+                        <p style="font-size: 0.85rem">
+                            Kritische User-Flows im echten Browser. Multi-Browser,
+                            automatisierbar in CI.
+                        </p>
+                    </div>
+                </div>
+                <div class="fade-in mt-3">
+                    <div class="card" style="border-color: var(--gold-dark)">
+                        <div class="card-label">Ansatz</div>
+                        <p style="font-size: 1rem">
+                            Kein Ziel von 100% Coverage. Tests sichern Refactorings ab. Ein
+                            fehlschlagender Test blockiert den Merge.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="15">
+            <div class="slide-content">
+                <h3 class="fade-in">ADR-014 | DevEx & Tooling</h3>
+                <h2 class="fade-in">Strict CI/CD Gates</h2>
+                <div class="stagger">
+                    <div class="card mb-3">
+                        <div class="card-label">Prinzip</div>
+                        <p style="font-size: 1rem">
+                            Automatisierte Pipelines garantieren, dass niemand kaputten Code
+                            in den Main-Branch mergen oder manuell deployen muss.
+                        </p>
+                    </div>
+                    <div class="card mb-3">
+                        <div class="card-label">Pull Request Pipeline</div>
+                        <div class="pipeline" style="margin-top: 0.5rem">
+                            <div class="pipeline-step">Biome (Lint)</div>
+                            <div class="pipeline-arrow">→</div>
+                            <div class="pipeline-step">TS Strict Check</div>
+                            <div class="pipeline-arrow">→</div>
+                            <div class="pipeline-step">Unit Tests</div>
+                            <div class="pipeline-arrow">→</div>
+                            <div class="pipeline-step">Build</div>
+                        </div>
+                    </div>
+                    <div class="card" style="border-color: var(--gold-dark)">
+                        <div class="card-label">Gate</div>
+                        <p style="font-size: 0.9rem">
+                            <strong class="red">0 Errors = Merge erlaubt.</strong>
+                            TypeScript läuft im strict-mode. Kein
+                            <span class="mono">ts-ignore</span> ohne Review-Begründung.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="16">
+            <div class="slide-content">
+                <h3 class="fade-in">Zusammenfassung</h3>
+                <h2 class="fade-in">14 Entscheidungen, ein Fundament</h2>
+
+                <div class="grid-4 stagger mt-4">
+                    <div class="phase-col">
+                        <div class="phase-header">Core Architecture</div>
+                        <div class="summary-item">
+                            <span class="summary-num">001</span> 3 unabh. Web-Apps
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">002</span> Shared Code
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">003</span> Feature-Struktur
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">004</span> Vite + React
+                        </div>
+                    </div>
+
+                    <div class="phase-col">
+                        <div class="phase-header">State & Data Flow</div>
+                        <div class="summary-item">
+                            <span class="summary-num">005</span> TanStack Router
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">006</span> Query + Zustand
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">007</span> React Hook Form + Zod
+                        </div>
+                    </div>
+
+                    <div class="phase-col">
+                        <div class="phase-header">UI Architecture</div>
+                        <div class="summary-item">
+                            <span class="summary-num">008</span> Tailwind CSS
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">009</span> Kein Preprocessor
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">010</span> Design Tokens
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">011</span> shadcn/ui
+                        </div>
+                    </div>
+
+                    <div class="phase-col">
+                        <div class="phase-header">DevEx & Tooling</div>
+                        <div class="summary-item">
+                            <span class="summary-num">012</span> Biome + Husky
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">013</span> Vitest + RTL + Playwright
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-num">014</span> Strict CI/CD
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fade-in mt-4" style="text-align: center">
+                    <p style="font-size: 1.1rem; color: var(--text-muted)">
+                        Status: <span class="tag tag-gold">Proposed</span>
+                    </p>
+                    <p style="
+                font-size: 0.95rem;
+                color: var(--text-dim);
+                margin-top: 0.5rem;
+              ">
+                        Alle ADRs offen für Feedback. Nächster Schritt: Team-Review →
+                        Accepted → Walking Skeleton.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-index="17">
+            <div class="slide-content" style="text-align: center">
+                <div class="glow glow-bl"></div>
+                <h3 class="fade-in">Nächste Schritte</h3>
+                <h2 class="fade-in" style="font-size: 2.5rem">
+                    Nach dem <span class="gradient-text">Team-Review</span>
+                </h2>
+                <div class="grid-2 stagger mt-3" style="max-width: 700px; margin: 2rem auto 0; gap: 1.2rem">
+                    <div class="card" style="text-align: left">
+                        <h4>Walking Skeleton</h4>
+                        <p>
+                            Stack validieren, Regeln definieren, Foundation Repo aufsetzen.
+                        </p>
+                    </div>
+                    <div class="card" style="text-align: left">
+                        <h4>Figma → Code</h4>
+                        <p>Design-System aus Figma automatisiert in Code überführen.</p>
+                    </div>
+                    <div class="card" style="text-align: left">
+                        <h4>shadcn Registry</h4>
+                        <p>Eigene Component Registry für alle 3 Projekte.</p>
+                    </div>
+                    <div class="card" style="text-align: left">
+                        <h4>Offene Entscheidungen</h4>
+                        <p>Auth, API-Schicht, Error Handling, Event Tracking, i18n.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll(".slide");
+        const progress = document.getElementById("progress");
+        const counter = document.getElementById("counter");
+        let current = 0;
+        const total = slides.length;
+
+        function updateSlide(direction = "next") {
+            slides.forEach((s, i) => {
+                s.classList.remove("active", "exit-up");
+                if (direction === "next" && i === current - 1) {
+                    s.classList.add("exit-up");
+                }
+            });
+            slides[current].classList.add("active");
+            progress.style.width = (current / (total - 1)) * 100 + "%";
+            counter.textContent = `${current + 1} / ${total}`;
+        }
+
+        function next() {
+            if (current < total - 1) {
+                current++;
+                updateSlide("next");
+            }
+        }
+
+        function prev() {
+            if (current > 0) {
+                current--;
+                updateSlide("prev");
+            }
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight" || e.key === " ") {
+                e.preventDefault();
+                next();
+            }
+            if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                prev();
+            }
+        });
+
+        let touchStartX = 0;
+        document.addEventListener("touchstart", (e) => {
+            touchStartX = e.touches[0].clientX;
+        });
+        document.addEventListener("touchend", (e) => {
+            const diff = touchStartX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 50) {
+                diff > 0 ? next() : prev();
+            }
+        });
+
+        document.addEventListener("click", (e) => {
+            if (e.clientX > window.innerWidth * 0.85) next();
+            else if (e.clientX < window.innerWidth * 0.15) prev();
+        });
+
+        updateSlide();
+
+        const slideTitles = [
+            "Titelfolie",
+            "ADR-001\n3 Apps",
+            "ADR-002\nShared Code",
+            "ADR-003\nProjektstruktur",
+            "Tech Stack",
+            "ADR-004\nVite + React",
+            "ADR-005\nRouting",
+            "ADR-006\nState Mgmt",
+            "ADR-007\nForms + Zod",
+            "ADR-008\nTailwind CSS",
+            "ADR-009\nKein Preproc.",
+            "ADR-010\nDesign Tokens",
+            "ADR-011\nshadcn/ui",
+            "ADR-012\nBiome + Husky",
+            "ADR-013\nTesting",
+            "ADR-014\nCI/CD",
+            "Zusammen-\nfassung",
+            "Nächste\nSchritte",
+        ];
+
+        const tray = document.getElementById("slideTray");
+        const trayInner = document.getElementById("slideTrayInner");
+        const hoverZone = document.getElementById("hoverZone");
+        let trayTimeout = null;
+        let trayVisible = false;
+
+        // Update indices since transition slides were removed.
+        // Highlighting the first slide of each domain in the tray.
+        const phaseIndices = [1, 6, 9, 13];
+        const phaseColors = {
+            1: "var(--gold)",
+            6: "var(--green)",
+            9: "var(--blue)",
+            13: "var(--red)",
+        };
+        slideTitles.forEach((title, i) => {
+            const thumb = document.createElement("div");
+            const isPhase = phaseIndices.includes(i);
+            thumb.className = "slide-thumb" + (i === current ? " active" : "");
+            thumb.dataset.index = i;
+            if (isPhase) thumb.style.borderTop = `2px solid ${phaseColors[i]}`;
+            thumb.innerHTML = `<div class="slide-thumb-num">${isPhase ? "◆" : i + 1}</div><div class="slide-thumb-title">${title.replace("\n", "<br>")}</div>`;
+            thumb.addEventListener("click", (e) => {
+                e.stopPropagation();
+                current = i;
+                updateSlide();
+                updateTrayActive();
+            });
+            trayInner.appendChild(thumb);
+        });
+
+        function updateTrayActive() {
+            trayInner.querySelectorAll(".slide-thumb").forEach((t, i) => {
+                t.classList.toggle("active", i === current);
+            });
+            const activeThumb = trayInner.querySelector(".slide-thumb.active");
+            if (activeThumb) {
+                activeThumb.scrollIntoView({
+                    behavior: "smooth",
+                    inline: "center",
+                    block: "nearest",
+                });
+            }
+        }
+
+        const origUpdate = updateSlide;
+        updateSlide = function (dir) {
+            origUpdate(dir);
+            updateTrayActive();
+        };
+
+        function showTray() {
+            clearTimeout(trayTimeout);
+            tray.classList.add("visible");
+            trayVisible = true;
+        }
+
+        function hideTray() {
+            trayTimeout = setTimeout(() => {
+                tray.classList.remove("visible");
+                trayVisible = false;
+            }, 400);
+        }
+
+        hoverZone.addEventListener("mouseenter", showTray);
+        hoverZone.addEventListener("mouseleave", hideTray);
+        tray.addEventListener("mouseenter", () => {
+            clearTimeout(trayTimeout);
+        });
+        tray.addEventListener("mouseleave", hideTray);
+
+        /* ========== EFFECT: Card Proximity Glow ========== */
+        const auroraBlob = document.querySelector('.aurora-blob-1');
+        function getBlobCenter() {
+            const rect = auroraBlob.getBoundingClientRect();
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        }
+
+        function updateCardGlow() {
+            const blob = getBlobCenter();
+            const activeSlide = document.querySelector('.slide.active');
+            if (!activeSlide) { requestAnimationFrame(updateCardGlow); return; }
+
+            const cards = activeSlide.querySelectorAll('.card, .vs-item, .phase-col, .stack-item, .pipeline-step, .summary-item, .tag, .glow-target');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const dist = Math.hypot(blob.x - cx, blob.y - cy);
+                const maxDist = 500;
+                const intensity = Math.max(0, 1 - dist / maxDist);
+                const i = intensity * intensity;
+
+                const borderAlpha = (0.08 + i * 0.45).toFixed(3);
+                const glowSize1 = (i * 35).toFixed(1);
+                const glowAlpha1 = (i * 0.2).toFixed(3);
+                const glowSize2 = (i * 70).toFixed(1);
+                const glowAlpha2 = (i * 0.08).toFixed(3);
+
+                card.style.borderColor = `rgba(170,121,57,${borderAlpha})`;
+                if (i > 0.01) {
+                    card.style.boxShadow = `0 0 ${glowSize1}px rgba(170,121,57,${glowAlpha1}), 0 0 ${glowSize2}px rgba(170,121,57,${glowAlpha2})`;
+                } else {
+                    card.style.boxShadow = '';
+                }
+            });
+            requestAnimationFrame(updateCardGlow);
+        }
+        requestAnimationFrame(updateCardGlow);
+        /* ========== END: Card Proximity Glow ========== */
+    </script>
+</body>
+
+</html>
