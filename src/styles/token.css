@@ -6,71 +6,71 @@
 
 /* ─── LIGHT MODE (default) ───────────────────────────────────────────────── */
 :root {
-    /* Farben */
-    --schemes-primary: #006a58;
-    --schemes-primary-container: #c7f0e9;
-    --schemes-on-primary-container: #004f42;
-    --schemes-surface: #ffffff;
-    --schemes-surface-container: #f2f7f7;
-    --schemes-on-surface: #161d1d;
-    --schemes-on-surface-variant: #3f4948;
-    --schemes-outline: #bec9c8;
+	/* Farben */
+	--schemes-primary: #006a58;
+	--schemes-primary-container: #c7f0e9;
+	--schemes-on-primary-container: #004f42;
+	--schemes-surface: #ffffff;
+	--schemes-surface-container: #f2f7f7;
+	--schemes-on-surface: #161d1d;
+	--schemes-on-surface-variant: #3f4948;
+	--schemes-outline: #bec9c8;
 
-    /* TODO: Diese Werte vom Designer anfordern (Dark Mode Werte fehlen noch) */
-    /* --schemes-primary-dark:             ??? */
-    /* --schemes-primary-container-dark:   ??? */
-    /* --schemes-surface-dark:             ??? */
-    /* --schemes-surface-container-dark:   ??? */
-    /* --schemes-on-surface-dark:          ??? */
-    /* --schemes-on-surface-variant-dark:  ??? */
-    /* --schemes-outline-dark:             ??? */
+	/* TODO: Diese Werte vom Designer anfordern (Dark Mode Werte fehlen noch) */
+	/* --schemes-primary-dark:             ??? */
+	/* --schemes-primary-container-dark:   ??? */
+	/* --schemes-surface-dark:             ??? */
+	/* --schemes-surface-container-dark:   ??? */
+	/* --schemes-on-surface-dark:          ??? */
+	/* --schemes-on-surface-variant-dark:  ??? */
+	/* --schemes-outline-dark:             ??? */
 
-    /* Schriften */
-    --font-family-heading: 'Outfit', system-ui, sans-serif;
-    --font-family-text: 'Inter', system-ui, sans-serif;
-    /* Platzhalter für Google Sans Flex */
+	/* Schriften */
+	--font-family-heading: "Outfit", system-ui, sans-serif;
+	--font-family-text: "Inter", system-ui, sans-serif;
+	/* Platzhalter für Google Sans Flex */
 
-    /* Typografie-Skala */
-    --text-heading-xxl-size: 48px;
-    --text-heading-xxl-height: 48px;
-    --text-heading-xxl-spacing: -0.03em;
-    --text-heading-xxl-weight: 500;
+	/* Typografie-Skala */
+	--text-heading-xxl-size: 48px;
+	--text-heading-xxl-height: 48px;
+	--text-heading-xxl-spacing: -0.03em;
+	--text-heading-xxl-weight: 500;
 
-    --text-heading-sm-size: 24px;
-    --text-heading-sm-height: 32px;
-    --text-heading-sm-spacing: -0.01em;
-    --text-heading-sm-weight: 500;
+	--text-heading-sm-size: 24px;
+	--text-heading-sm-height: 32px;
+	--text-heading-sm-spacing: -0.01em;
+	--text-heading-sm-weight: 500;
 
-    --text-body-md-size: 16px;
-    --text-body-md-height: 24px;
-    --text-body-md-spacing: 0;
-    --text-body-md-weight: 400;
+	--text-body-md-size: 16px;
+	--text-body-md-height: 24px;
+	--text-body-md-spacing: 0;
+	--text-body-md-weight: 400;
 
-    --text-label-md-size: 16px;
-    --text-label-md-height: 24px;
-    --text-label-md-spacing: 0;
-    --text-label-md-weight: 450;
+	--text-label-md-size: 16px;
+	--text-label-md-height: 24px;
+	--text-label-md-spacing: 0;
+	--text-label-md-weight: 450;
 }
 
 /* ─── DARK MODE ──────────────────────────────────────────────────────────── */
 /* Wird aktiviert wenn data-theme="dark" auf <html> gesetzt ist               */
 /* WERTE NOCH AUSSTEHEND – werden vom Designer nachgeliefert                  */
-:root[data-theme='dark'] {
-    /* TODO: Vom Designer anfordern */
-    --schemes-primary: #4db89e;
-    /* Platzhalter */
-    --schemes-primary-container: #004f42;
-    /* Platzhalter */
-    --schemes-on-primary-container: #c7f0e9;
-    /* Platzhalter */
-    --schemes-surface: #0e1514;
-    /* Platzhalter */
-    --schemes-surface-container: #1a2120;
-    /* Platzhalter */
-    --schemes-on-surface: #dde4e3;
-    /* Platzhalter */
-    --schemes-on-surface-variant: #bec9c8;
-    /* Platzhalter */
-    --schemes-outline: #3f4948;
-    /* Platzhalter */
+:root[data-theme="dark"] {
+	/* TODO: Vom Designer anfordern */
+	--schemes-primary: #4db89e;
+	/* Platzhalter */
+	--schemes-primary-container: #004f42;
+	/* Platzhalter */
+	--schemes-on-primary-container: #c7f0e9;
+	/* Platzhalter */
+	--schemes-surface: #0e1514;
+	/* Platzhalter */
+	--schemes-surface-container: #1a2120;
+	/* Platzhalter */
+	--schemes-on-surface: #dde4e3;
+	/* Platzhalter */
+	--schemes-on-surface-variant: #bec9c8;
+	/* Platzhalter */
+	--schemes-outline: #3f4948;
+	/* Platzhalter */
 }

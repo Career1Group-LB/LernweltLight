@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
-import { coursesApi } from '../api/courses.api';
+import { coursesApi } from "../api/courses.api";
 
 export function useCourses() {
-    return useQuery({
-        queryKey: ['courses'],
-        queryFn: coursesApi.getCourses,
-    });
+	return useQuery({
+		queryKey: ["courses"],
+		queryFn: coursesApi.getCourses,
+	});
 }

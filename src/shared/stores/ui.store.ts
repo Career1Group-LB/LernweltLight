@@ -1,9 +1,9 @@
 // src/shared/stores/ui.store.ts
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface UIState {
-    sidebarOpen: boolean;
-    toggleSidebar: () => void;
+	sidebarOpen: boolean;
+	toggleSidebar: () => void;
 }
 
 // **Was macht `create`?**
@@ -15,6 +15,6 @@ interface UIState {
 // `(state) => ({ sidebarOpen: !state.sidebarOpen })` liest den alten Wert
 // und kehrt ihn um(`true` → `false`, `false` → `true`).
 export const useUIStore = create<UIState>((set) => ({
-    sidebarOpen: true,
-    toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+	sidebarOpen: true,
+	toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 }));

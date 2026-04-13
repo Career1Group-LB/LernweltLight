@@ -1,4 +1,8 @@
-export { useCourses } from './hooks/useCourses';
-export { useCourse } from './hooks/useCourse';
-export type { Course, Module, LearningUnit, Activity } from './schemas/course.schema';
-
+export { useCourse } from "./hooks/useCourse";
+export { useCourses } from "./hooks/useCourses";
+export type {
+	Activity,
+	Course,
+	LearningUnit,
+	Module,
+} from "./schemas/course.schema";

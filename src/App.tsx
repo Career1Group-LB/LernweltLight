@@ -1,7 +1,7 @@
-import { RouterProvider } from 'react-router-dom';
+import { RouterProvider } from "react-router-dom";
 
-import { QueryProvider } from '@/providers/QueryProvider';
-import { router } from '@/router/routes';
+import { QueryProvider } from "@/providers/QueryProvider";
+import { router } from "@/router/routes";
 
 // Die Reihenfolge der Provider ist wichtig!
 // QueryProvider muss AUSSEN sein, weil der Router innen React Query braucht
@@ -14,10 +14,11 @@ import { router } from '@/router/routes';
 //   child: MaterialApp.router(routerConfig: router),      ← innen
 // )
 export default function App() {
-  return (
-
-    <QueryProvider>           {/* ← React Query für die gesamte App */}
-      <RouterProvider router={router} />  {/* ← Router mit allen Seiten */}
-    </QueryProvider>
-  );
+	return (
+		<QueryProvider>
+			{" "}
+			{/* ← React Query für die gesamte App */}
+			<RouterProvider router={router} /> {/* ← Router mit allen Seiten */}
+		</QueryProvider>
+	);
 }

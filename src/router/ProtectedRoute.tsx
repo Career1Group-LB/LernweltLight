@@ -1,9 +1,9 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate } from "react-router-dom";
 
-import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 interface ProtectedRouteProps {
-    children: React.ReactNode;
+	children: React.ReactNode;
 }
 
 // ProtectedRoute ist eine "Guard-Komponente" – sie prüft ob der User
@@ -16,20 +16,20 @@ interface ProtectedRouteProps {
 //   return null;
 // }
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-    const { isAuthenticated, isLoading } = useAuth();
+	const { isAuthenticated, isLoading } = useAuth();
 
-    // Noch beim Laden (z.B. Token aus Storage prüfen) → Warte-Bildschirm
-    if (isLoading) {
-        return <div>Authentifizierung wird geprüft...</div>;
-    }
+	// Noch beim Laden (z.B. Token aus Storage prüfen) → Warte-Bildschirm
+	if (isLoading) {
+		return <div>Authentifizierung wird geprüft...</div>;
+	}
 
-    // Nicht eingeloggt → sofort zur Login-Seite umleiten
-    // "replace" bedeutet: Der /login-Eintrag ersetzt die aktuelle URL im Browser-Verlauf
-    // (so kann der User nicht den Browser-Zurück-Button nutzen um wieder reinzukommen)
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
+	// Nicht eingeloggt → sofort zur Login-Seite umleiten
+	// "replace" bedeutet: Der /login-Eintrag ersetzt die aktuelle URL im Browser-Verlauf
+	// (so kann der User nicht den Browser-Zurück-Button nutzen um wieder reinzukommen)
+	if (!isAuthenticated) {
+		return <Navigate to="/login" replace />;
+	}
 
-    // Eingeloggt → Inhalt anzeigen
-    return <>{children}</>;
+	// Eingeloggt → Inhalt anzeigen
+	return <>{children}</>;
 }

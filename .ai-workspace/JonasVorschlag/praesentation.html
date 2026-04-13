@@ -1832,7 +1832,7 @@
         }
 
         const origUpdate = updateSlide;
-        updateSlide = function (dir) {
+        updateSlide = (dir) => {
             origUpdate(dir);
             updateTrayActive();
         };

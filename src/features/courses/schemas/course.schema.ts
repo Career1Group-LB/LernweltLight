@@ -1,31 +1,31 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const ActivitySchema = z.object({
-    id: z.string(),
-    title: z.string(),
-    type: z.enum(['video', 'quiz', 'text', 'exercise']),
-    durationMinutes: z.number().nullable(),
+	id: z.string(),
+	title: z.string(),
+	type: z.enum(["video", "quiz", "text", "exercise"]),
+	durationMinutes: z.number().nullable(),
 });
 
 export const LearningUnitSchema = z.object({
-    id: z.string(),
-    title: z.string(),
-    activities: z.array(ActivitySchema),
+	id: z.string(),
+	title: z.string(),
+	activities: z.array(ActivitySchema),
 });
 
 export const ModuleSchema = z.object({
-    id: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    learningUnits: z.array(LearningUnitSchema),
+	id: z.string(),
+	title: z.string(),
+	description: z.string().nullable(),
+	learningUnits: z.array(LearningUnitSchema),
 });
 
 export const CourseSchema = z.object({
-    id: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    previewImageUrl: z.string().nullable(),
-    modules: z.array(ModuleSchema),
+	id: z.string(),
+	title: z.string(),
+	description: z.string().nullable(),
+	previewImageUrl: z.string().nullable(),
+	modules: z.array(ModuleSchema),
 });
 
 export const CoursesListSchema = z.array(CourseSchema);
