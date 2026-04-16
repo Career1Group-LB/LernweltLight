@@ -1,0 +1,1 @@
+https://tanstack.com/query/v5/docs/framework/react/installation
