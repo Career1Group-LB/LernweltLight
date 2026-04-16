@@ -1,0 +1,33 @@
+{
+	"actions": {
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"delete": "Löschen",
+		"edit": "Bearbeiten",
+		"back": "Zurück",
+		"next": "Weiter",
+		"close": "Schließen",
+		"retry": "Erneut versuchen",
+		"loading": "Laden..."
+	},
+	"navigation": {
+		"dashboard": "Dashboard",
+		"learningPlan": "Lernplan",
+		"notes": "Notizen",
+		"courses": "Kurse",
+		"profile": "Profil",
+		"certificates": "Zertifikate",
+		"news": "Neuigkeiten",
+		"glossary": "Glossar",
+		"faq": "FAQ",
+		"livestream": "Livestream",
+		"jobOffers": "Stellenangebote",
+		"campus": "Campus",
+		"mediaLibrary": "Mediathek"
+	},
+	"states": {
+		"loading": "Wird geladen...",
+		"empty": "Keine Inhalte verfügbar.",
+		"error": "Ein Fehler ist aufgetreten."
+	}
+}
